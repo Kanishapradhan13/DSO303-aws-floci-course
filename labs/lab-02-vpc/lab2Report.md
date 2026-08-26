@@ -27,17 +27,6 @@ Amazon VPC (Virtual Private Cloud) is the network layer where all AWS resources 
 
 ## 4. System Architecture / Design
 
-The network follows a standard two-tier design across two Availability Zones for redundancy:
-
-- **VPC:** `usms-vpc` — `10.0.0.0/16`
-- **Public subnets** (`10.0.1.0/24`, `10.0.2.0/24` — AZ a/b): host the web tier; route table sends `0.0.0.0/0` → Internet Gateway.
-- **Private subnets** (`10.0.3.0/24`, `10.0.4.0/24` — AZ a/b): host the data tier; route table sends `0.0.0.0/0` → NAT Gateway (outbound only), plus a direct route to the S3 endpoint.
-- **Security groups:** `usms-app-sg` (HTTP/HTTPS from internet, SSH from VPC only) and `usms-db-sg` (PostgreSQL from `usms-app-sg` only — group-to-group, not CIDR-based).
-- **Network ACL:** `usms-private-nacl` applied to the private subnet as a subnet-wide backstop, independent of security group config.
-- **NAT Gateway:** sits in the public subnet with an Elastic IP, giving the private subnet outbound-only internet access.
-- **S3 Gateway Endpoint:** routes S3 traffic from the private subnet directly within AWS, bypassing the NAT/internet gateway entirely.
-
-*(Insert the lab's architecture diagram screenshot here.)*
 
 ---
 
@@ -153,50 +142,45 @@ The network follows a standard two-tier design across two Availability Zones for
 
 * **Step 25:** Verified `.gitignore` rules and committed the lab's work to Git.
 
-
+![alt text](../../screenshots/lab2/25.png)
 
 ---
 
 ## 6. Results and Evidence
 
-### 6.1 CLI / SDK Output
-*Insert screenshot(s) here*
-
-### 6.2 AWS Management Console Verification
-*Insert screenshot(s) here*
-> Note: This lab uses Floci (a CLI-only local AWS emulator), so there is no AWS Console. Substitute Floci CLI inspection output (`describe-vpcs`, `describe-subnets`, `describe-route-tables`, `describe-security-groups`) as evidence instead, if a real Console isn't available.
+### 6.1 AWS Management Console Verification
 
 ---
 
 ## 7. Analysis and Discussion
 
-- **Achieved:** A complete two-tier VPC network with public/private subnets, routing, NAT, security groups, a NACL, and an S3 endpoint — all built and verified via the AWS CLI.
-- **Matched expectations:** [Confirm whether all checkpoints (1–9) passed.]
-- **Errors encountered:** [e.g., quoting issues in `--query` expressions, NAT gateway placed in the wrong subnet, missing ephemeral-port NACL rule.]
-- **Resolution:** [How issues were fixed.]
-- **Observations:** The difference between a "public" and "private" subnet is entirely determined by its route table — there is no attribute on the subnet itself. Floci's S3 gateway endpoint may not always inject the prefix-list route into the route table, though the endpoint itself still works.
+- **Accomplished:** Creation of full two-tier VPC network with public/ private subnets, routing, NAT, security group, NACL, and S3 endpoint using AWS CLI.
+- **As Expected:** Passed all checkpoints (1-9) as expected; lastly, confirmed the architectural match using CLI.
+- **Errors Experienced:** None – smooth build process, following the instructions from the guide step-by-step without any difficulties.
+- **Resolution:** Not applicable – no critical errors to resolve.
+- **Notes:** The distinction between "public" and "private" subnet is completely defined by its route table; there is no property of the subnet itself. The S3 gateway endpoint may not always add the prefix-list route to the route table, but the endpoint itself works fine.
 
 ---
 
 ## 8. Reflection
 
 1. **What did you learn about this AWS service?**
-   [Your reflection]
+   I learned that VPC networking is all about traffic control through route tables – the subnet is not public or private in itself, it's the attached route table that dictates whether the traffic is allowed to connect to the internet.
 
 2. **What challenges did you encounter?**
-   [Your reflection]
+   There were no issues with the build in general although there was a need to pay attention while connecting route table, NAT gateway, and NACL rule to the appropriate subnets since AWS does not separate them visually into public and private.
 
 3. **How would you apply this service in a real-world cloud environment?**
-   [Your reflection]
+   Exactly this setup with the public and private subnets is used when running a real application with public subnets for load balancers or web servers and private ones to hide databases and backend.
 
 4. **What additional concepts or features would you like to explore?**
-   [Your reflection]
+    I am interested in learning more about VPC Peering and Transit Gateway.
 
 ---
 
 ## 9. Conclusion
 
-This practical built a complete two-tier VPC network for a fictional university system, separating a public web tier from a private data tier using subnets, route tables, an internet gateway, and a NAT gateway. Security groups and a network ACL were layered together to control traffic at both the instance and subnet level, and an S3 gateway endpoint was added to keep S3 traffic inside the AWS network. Key concepts reinforced include CIDR addressing, the routing-based definition of a "public" subnet, and the stateful-vs-stateless distinction between security groups and NACLs. The network's persistence was proven across a restart, and all resource IDs were saved for reuse in Lab 3.
+The practical created a full-fledged two-tier VPC architecture for a fictional university system by splitting the system into two subnets, namely, a public web tier and a private data tier, through the use of subnets, route tables, internet gateway, and NAT gateway. Security groups and network ACLs were used together to allow traffic at instance and subnet levels, respectively, while an S3 gateway endpoint was added to ensure that S3 traffic stayed within the AWS network only. Some important concepts covered through this practical include CIDR addressing, the use of routing table to determine public subnets, and the difference between stateful and stateless of security groups and NACLs.
 
 ---
 
