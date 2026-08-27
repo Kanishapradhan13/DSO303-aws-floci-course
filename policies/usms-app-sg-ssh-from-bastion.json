@@ -1,0 +1,13 @@
+[
+  {
+    "IpProtocol": "tcp",
+    "FromPort": 22,
+    "ToPort": 22,
+    "UserIdGroupPairs": [
+      {
+        "GroupId": "sg-a22f708dd6952abef",
+        "Description": "SSH from the USMS bastion host only"
+      }
+    ]
+  }
+]

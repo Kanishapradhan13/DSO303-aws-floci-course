@@ -146,9 +146,38 @@ Amazon VPC (Virtual Private Cloud) is the network layer where all AWS resources 
 
 ---
 
-## 6. Results and Evidence
+## 6. Review Questions
 
-### 6.1 AWS Management Console Verification
+1. A colleague creates a subnet, names it public-subnet, tags it Tier=public, and turns on auto-assign public IPv4. Instances launched into it cannot reach the internet. Explain exactly what is missing, and explain why the name, the tag and the public IP address all failed to make it public. 
+
+= Naming it "public," tagging it "Tier=public," and turning on auto-assign IPv4 don't actually connect the subnet to the internet — they're just labels/settings AWS doesn't act on by itself. What's actually missing is a route in the subnet's route table pointing 0.0.0.0/0 to an internet gateway. Without that route, instances have public IPs but nowhere to send internet-bound traffic, so they're stuck.
+
+2. Security groups are stateful and network ACLs are stateless. Describe a specific USMS request path name the ports and the direction of each leg where that difference changes how many rules you must write. Then say which of the two you would reach for first when a new requirement arrives, and why.
+
+= Consider a request going from `usms-app-sg` to `usms-db-sg` at port 5432 (app -> db) and the return (db -> app). If using security groups, I would write just one inbound rule on the db instance permitting 5432 traffic from the app SG – the return traffic will be automatically permitted as security groups are stateful. If using NACLs, I would write the same inbound rule on the private subnet, along with the outbound rule permitting 1024-65535 ephemeral ports in the public/app subnet NACL for the return traffic, as NACLs forget nothing.
+
+3. usms-db-sg allows PostgreSQL from usms-app-sg rather than from 10.0.1.0/24. Give two concrete changes to the USMS architecture that would silently break the CIDR-based version while leaving the group-referenced version correct.
+
+= Two modifications that would silently render the CIDR-based approach invalid while keeping the SG-reference based rule valid are: (a) adding more application servers to the second subnet that has the other CIDR block value (for example when scaling to another availability zone) – their traffic will not be matching `10.0.1.0/24` anymore and will be silently dropped; (b) modifying or resizing the application subnet so that the CIDR is changed – the same applies here. In both scenarios, the SG reference rule stays valid since it depends on the security group itself and does not care about the actual IP addresses.
+
+4. The NAT gateway sits in usms-public-subnet-a but exists to serve usms-private-subnet-a. Explain why it must be in the public subnet. Then explain what would happen to the private subnet in AZ b if AZ a became unavailable, and what that implies about where the availability boundary really sits.
+
+= The NAT gateway has to sit in the public subnet because it needs its own route to the internet gateway and a public IP to translate private traffic through — it can't do that from a private subnet. If AZ a goes down, the NAT gateway in `usms-public-subnet-a` goes down with it, which means `usms-private-subnet-b` loses internet access too, even though AZ b itself is fine — because it was relying on a NAT gateway in a different AZ. This shows the real availability boundary isn't the AZ the private subnet lives in, but wherever its NAT gateway lives; for true multi-AZ resilience you need one NAT gateway per AZ, not one shared across all of them.
+
+
+5. This lab created a gateway endpoint for S3. Describe the path a request from a private instance to usms-student-data takes with the endpoint, and the path it would take without one. Identify which path leaves the AWS network and what that costs in money and in exposure.
+
+= With the S3 gateway endpoint, a request from a private instance to `usms-student-data` travels entirely over AWS's internal network straight to S3 — it never leaves AWS. Without the endpoint, the request has to go instance - NAT gateway - internet gateway - public internet - S3, meaning it technically leaves the AWS network even though it's headed to another AWS service. The no-endpoint path is the one that leaves AWS, and it costs both money (NAT gateway data processing charges) and exposure (traffic crosses the public internet instead of staying private).
+
+6. Step 23 restarted Floci and looked the VPC up by tag rather than reusing the VPC_ID shell variable. Explain what specifically would not have been proven had the variable been reused. Relate your answer to the failure described in Lab 1 Step 14.
+
+= If I'd just reused the `$VPC_ID` shell variable, all I'd be proving is that the variable still held a value from earlier in the session — not that the VPC it points to still actually exists in AWS. Looking it up by tag forces AWS to independently confirm the VPC is really there and discoverable on its own records, regardless of what my shell remembers. This connects to the Lab 1 Step 14 failure, where trusting local/session state instead of verifying against AWS's actual state was exactly what caused things to look fine when they weren't.
+
+
+7. Floci does not enforce security groups. Given that, explain how you can still be confident that the rules you wrote in Steps 14 and 15 are correct and describe one specific mistake that this lab's verification would catch and one that it would not.
+
+= Since Floci doesn't enforce security groups, I can't rely on Floci actually blocking or allowing traffic to prove my rules are right. Instead I stay confident by checking the actual rule definitions via AWS CLI (`describe-security-groups`) and, where possible, testing real connections to see if traffic behaves as expected. The lab's verification would catch things like a rule missing entirely, wrong port, or wrong protocol, since those are visible in the rule definition itself. It would NOT catch a rule that's technically correctly written but logically too permissive or wrong for the design — like accidentally allowing `0.0.0.0/0` instead of a specific SG, since that's still a "valid" rule, just the wrong one.
+
 
 ---
 
