@@ -178,7 +178,7 @@ Amazon VPC (Virtual Private Cloud) is the network layer where all AWS resources 
 
 7. Floci does not enforce security groups. Given that, explain how you can still be confident that the rules you wrote in Steps 14 and 15 are correct and describe one specific mistake that this lab's verification would catch and one that it would not.
 
-= Even though Floci won't actually block or allow real traffic, I can still trust the rules because I read them back with `describe-security-groups` and confirmed the exact ports, protocols, and sources are what I intended — that's a configuration check, not a traffic check. Verification would catch something like a wrong port number or a CIDR-based rule where I meant a group-based one, since that's visible in the returned rule set. What it would *not* catch is whether the rule actually blocks or allows real traffic correctly in practice, since Floci never sends real packets through it.
+= qEven though Floci won't actually block or allow real traffic, I can still trust the rules because I read them back with `describe-security-groups` and confirmed the exact ports, protocols, and sources are what I intended — that's a configuration check, not a traffic check. Verification would catch something like a wrong port number or a CIDR-based rule where I meant a group-based one, since that's visible in the returned rule set. What it would *not* catch is whether the rule actually blocks or allows real traffic correctly in practice, since Floci never sends real packets through it.
 
 ---
 
