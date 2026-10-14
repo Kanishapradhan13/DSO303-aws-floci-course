@@ -30,7 +30,7 @@ I recorded the time, raised `MinCapacity` to 4, polled until the running count m
 
 | | |
 |---|---|
-| Start | 2026-10-15T04:27:48Z |
+| Start | 2026-10-4T04:27:48Z |
 | End | 2026-10-15T04:27:50Z |
 | Elapsed | 2 seconds |
 | Floor | 2 → 4 → 2 |
